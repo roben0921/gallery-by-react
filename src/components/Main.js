@@ -32,8 +32,12 @@ class ImgFigure extends React.Component{
 		//imgFigure 的点击处理函数
 	}
 	handleClick(e){
-		this.props.inverse()
-		e.stopPropagration()
+		if (this.props.arrage.isCenter) {
+      this.props.inverse()
+    } else {
+      this.props.center();
+    }
+		e.stopPropagation()
 		e.preventDefault()
 	}
 	render(){
@@ -44,20 +48,23 @@ class ImgFigure extends React.Component{
 		}
 		 //如果图片的旋转角度不为0 ，添加旋转角度
 		if(this.props.arrage.rotate){
-			(['-moz-','-wibkit-','-ms-','']).forEach((value,index) =>{
-				styleObj[value + 'transform'] ='rotate(' +this.props.arrage.rotate +'deg)'
+			(['MozTransform','WibkitTransform','MsTransform','transform']).forEach((value) =>{
+				styleObj[value] ='rotate(' +this.props.arrage.rotate +'deg)'
 			})
 		}
+		if (this.props.arrage.isCenter) {
+      styleObj.zIndex = 11;
+    }
 		let imgFigureClassName = 'img-figure'
-		imgFigureClassName += this.props.arrage.isInverse ? 'is-inverse' : ''
+		imgFigureClassName += this.props.arrage.isInverse ? ' is-inverse' : ''
 		return(
 			<figure className={imgFigureClassName} style={styleObj} onClick={this.handleClick}>
 				<img src={this.props.data.imageURL} alt={this.props.data.title}/>
 				<figcaption>
-					<h2 className="img-tit">{this.props.data.title}</h2>
+					<h2 className="img-tit"> {this.props.data.title}</h2>
 					<div className='img-back' onClick={this.handleClick}>
 						 <p>
-						 	{this.props.data.desc}
+						 	{this.props.data.dsc}
 						 </p>
 					</div>
 				</figcaption>
@@ -65,6 +72,40 @@ class ImgFigure extends React.Component{
 		);
 	}
 }
+
+//控制组件
+class ControllerUnit extends React.Component {
+	constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+	}
+	handleClick(e){
+		//如果点击的是当前选中态的图片，将图片居中，否则将图片居中
+		if(this.props.arrage.isCenter)
+		{
+			this.props.inverse()
+		}else{
+			this.props.center()
+		}
+		e.stopPropagation()
+		e.preventDefault()
+	}
+	render(){
+		let controllerUnit ='controller-unit'
+		if(this.props.arrage.isCenter)
+		{
+			controllerUnit += ' is-center'
+			if(this.props.arrage.isInverse)
+			{
+				controllerUnit += ' is-inverse'
+			}
+		}
+		return(
+			<span className={controllerUnit} onClick={this.handleClick}></span>
+		)
+	}
+}
+
 
 class AppComponent extends React.Component {
 
@@ -111,6 +152,16 @@ constructor(props) {
 		}
 	}
 
+  /*
+   *利用rearramhe函数
+   *居中对应index的图片
+   */
+  center(index) {
+    return () => {
+      this.reArrage(index);
+    }
+  }
+
 	/*
 	*重新布局所有图片
 	*@param centerIndex 指定居中排布那个图片
@@ -128,7 +179,7 @@ constructor(props) {
 		let vPosRangeX =vPosRange.x
 
 		let imgsArrageTopArr =[]
-		let topImgNum =Math.ceil(Math.random() * 2)  //取1个或不取
+		let topImgNum =Math.floor(Math.random() * 2)  //取1个或不取
 		let topImgSpliceIndex =0
 		let imgsArrageCenterArr =imgsArrageArr.splice(centerIndex,1)
 
@@ -153,7 +204,6 @@ constructor(props) {
 				isCenter: false
 			}
 		})
-
 		//部剧两侧的图片
 		for(let i =0, j =imgsArrageArr.length,k =j/2 ; i < j ; i++){
 			let hPosRangeLORX =null
@@ -214,7 +264,9 @@ constructor(props) {
 		this.Constant.vPosRange.topY[1] = halfStageH -halfImgH * 3
 		this.Constant.vPosRange.x[0] = halfStageW - imgW
 		this.Constant.vPosRange.x[1] = halfStageW
-		this.reArrage(0)
+		//this.reArrage(0)
+		let num = Math.floor(Math.random() * 10);
+    this.reArrage(num);
 	}
   render() {
   	let controlUnits=[]
@@ -229,19 +281,23 @@ constructor(props) {
   					left:0,
   					top:0
   				},
-  				rotate:0
+  				rotate:0,
+  				isInverse:false,
+  				isCenter:false
   			}
   		}
 
       imgFigures.push( <ImgFigure data= {value} key={index} ref={'imgFigure'+index}
-      arrage ={this.state.imgsArrageArr[index]} inverse={this.inverse(index)}/>)
+      arrage ={this.state.imgsArrageArr[index]} inverse={this.inverse(index)} center={this.center(index)}/>)
+      controlUnits.push( <ControllerUnit data= {value} key={index} arrage ={this.state.imgsArrageArr[index]} inverse={this.inverse(index)} center={this.center(index)}/>)
+
     });
     return (
       <section className="stage" ref="stage">
       	<section className="img-sec">
       		{imgFigures}
       	</section>
-      	<nav className="control-nav">
+      	<nav className="controller-nav">
       		{controlUnits}
       	</nav>
       </section>
